@@ -3734,13 +3734,21 @@ bool Camera3Device::RequestThread::threadLoop() {
         cleanUpFailedRequests(/*sendRequestError*/ true);
         // Check if any stream is abandoned.
         checkAndStopRepeatingRequest();
-        // Inform waitUntilRequestProcessed thread of a failed request ID
-        wakeupLatestRequest(/*failedRequestId*/true, latestRequestId);
+        // Inform waitUntilRequestProcessed thread of a new request ID
+        {
+            Mutex::Autolock al(mLatestRequestMutex);
+            mLatestRequestId = latestRequestId;
+            mLatestRequestSignal.signal();
+        }
         return true;
     } else if (res != OK) {
         cleanUpFailedRequests(/*sendRequestError*/ false);
-        // Inform waitUntilRequestProcessed thread of a failed request ID
-        wakeupLatestRequest(/*failedRequestId*/true, latestRequestId);
+        // Inform waitUntilRequestProcessed thread of a new request ID
+        {
+            Mutex::Autolock al(mLatestRequestMutex);
+            mLatestRequestId = latestRequestId;
+            mLatestRequestSignal.signal();
+        }
         return false;
     }
 
